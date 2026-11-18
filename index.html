@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#173c68">
+<title>Regiodiensten 2027</title>
+<style>
+body{font-family:-apple-system,Arial;background:#f1f4f8;color:#172b43;margin:0;padding:18px}
+h1{color:#173c68} .card{background:white;border-radius:15px;padding:17px;margin:13px 0;box-shadow:0 2px 8px #0001}
+input,textarea,button{box-sizing:border-box;width:100%;padding:12px;margin:5px 0;border:1px solid #ccd4df;border-radius:9px;font-size:16px}
+button{background:#173c68;color:white;border:0;font-weight:bold}
+.small{color:#64748b;font-size:13px}
+.entry{border-top:1px solid #ddd;padding:12px 0}
+.delete{background:#a33;width:auto;padding:8px}
+</style>
+</head>
+<body>
+<h1>📍 Regiodiensten 2027</h1>
+<p>Mijn persoonlijke werkagenda</p>
+<div class="card">
+<h2>Mijn overzicht</h2>
+<h3 id="total">0 regiodiensten</h3>
+<p id="places">Nog geen locaties</p>
+</div>
+<div class="card">
+<h2>+ Dienst toevoegen</h2>
+<label>Datum</label>
+<input id="date" type="date" min="2027-01-01" max="2027-12-31" value="2027-01-01">
+<label>Werklocatie</label>
+<input id="place" placeholder="Bijvoorbeeld Utrecht">
+<label>Begintijd</label>
+<input id="start" type="time" value="08:00">
+<label>Eindtijd</label>
+<input id="end" type="time" value="16:00">
+<label>Opmerkingen</label>
+<textarea id="note" placeholder="Eventuele opmerkingen"></textarea>
+<button onclick="add()">Dienst opslaan</button>
+</div>
+<div class="card">
+<h2>Mijn diensten</h2>
+<select id="month" onchange="render()">
+<option value="">Alle maanden</option>
+<option value="01">Januari</option><option value="02">Februari</option>
+<option value="03">Maart</option><option value="04">April</option>
+<option value="05">Mei</option><option value="06">Juni</option>
+<option value="07">Juli</option><option value="08">Augustus</option>
+<option value="09">September</option><option value="10">Oktober</option>
+<option value="11">November</option><option value="12">December</option>
+</select>
+<div id="list"></div>
+</div>
+<div class="card">
+<h2>Back-up</h2>
+<button onclick="backup()">Gegevens downloaden</button>
+<p class="small">Bewaar regelmatig een back-up van je diensten.</p>
+</div>
+<script>
+let data=JSON.parse(localStorage.getItem('regio2027')||'[]');
+function save(){localStorage.setItem('regio2027',JSON.stringify(data))}
+function add(){
+let date=document.getElementById('date').value;
+let place=document.getElementById('place').value.trim();
+let start=document.getElementById('start').value;
+let end=document.getElementById('end').value;
+if(!date||!date.startsWith('2027-')||!place||!start||!end){alert('Vul alle verplichte velden in');return}
+if(start===end){alert('Begin- en eindtijd mogen niet gelijk zijn');return}
+data.push({id:Date.now(),date,place,start,end,note:document.getElementById('note').value});
+save();document.getElementById('place').value='';document.getElementById('note').value='';render();
+}
+function render(){
+let m=document.getElementById('month').value;
+let list=data.filter(x=>!m||x.date.slice(5,7)===m).sort((a,b)=>a.date.localeCompare(b.date));
+document.getElementById('total').textContent=data.length+' regiodiensten';
+let places=[...new Set(data.map(x=>x.place))];
+document.getElementById('places').textContent=places.length+' verschillende locaties: '+places.join(', ');
+document.getElementById('list').innerHTML=list.length?list.map(x=>`<div class="entry"><b>${esc(x.place)}</b><br>${esc(x.date)}<br>${esc(x.start)} – ${esc(x.end)}<br>${esc(x.note)}<br><button class="delete" onclick="removeItem(${x.id})">Verwijderen</button></div>`).join(''):'Nog geen diensten ingevoerd.';
+}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function removeItem(id){if(confirm('Dienst verwijderen?')){data=data.filter(x=>x.id!==id);save();render()}}
+function backup(){
+let a=document.createElement('a');let u=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.href=u;a.download='regiodiensten-2027.json';a.click();URL.revokeObjectURL(u);
+}
+render();
+</script>
+</body>
+</html>
